@@ -1,0 +1,38 @@
+@model Spotters.Models.ObsVM
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OBS</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+</head>
+<body>
+    <img id="face" />
+
+    <script>
+        const conn = new signalR.HubConnectionBuilder()
+            .withUrl('/hub/audio').build();
+        conn.start();
+
+        conn.on('ReceiveVolume', (user, vol, character, visible) => {
+            if (user !== '@(Model.Username)' || character !== '@(Model.Character)') return;
+
+            updateFace(user, vol, character, visible);
+        });
+
+        function updateFace(user, vol, character, visible) {
+            const img = document.getElementById('face');
+
+            if (!visible) {
+                img.src = '';
+            } else {
+                if (vol < 0.3) img.src = '/images/' + user + '/' + character + '/closed.png';
+                if (vol > 0.3) img.src = '/images/' + user + '/' + character + '/slightly_open.png';
+                if (vol > 0.8) img.src = '/images/' + user + '/' + character + '/mid_open.png';
+                if (vol > 1) img.src = '/images/' + user + '/' + character + '/more_open.png';
+                if (vol > 1.5) img.src = '/images/' + user + '/' + character + '/fully_open.png';
+            }
+        }
+    </script>
+</body>
+</html>

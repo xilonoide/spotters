@@ -1,0 +1,169 @@
+@model Spotters.Models.SpotterVM
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>@Model.Username.ToUpper()</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+    <link rel="stylesheet" href="/css/site.css" />
+    <link rel="stylesheet" href="/css/spotter.css" />
+</head>
+<body>
+    <div name="buttons" class="shadow">
+        <label>
+            Mic:
+            <progress id="vol" max="2" />
+        </label>
+        <button id="btn-hide-all">Hide all</button>
+        <button id="btn-show-all">Show all</button>
+    </div>
+
+    <div name="spotters" class="shadow">
+        @foreach (var spotter in Model.Spotters.OrderByDescending(it => it.Name == Model.Username))
+        {
+            <div name="spotter" data-spotter-name="@spotter.Name">
+                <h3>@spotter.Name</h3>
+
+                @foreach (var character in spotter.Characters)
+                {
+                    <div name="character" data-character-name="@character.Name" class="character" @(spotter.Name == Model.Username && character.Active ? "active" : "")>
+                        <h5>@character.Name</h5>
+                        <img src="~/@spotter.ImagesPath(character.Name)/closed.png" />
+
+                        <label class="visibility toggle" @(spotter.Name == Model.Username ? "" : "style=display:none")>
+                            <input type="checkbox" name="visible" @(character.Visible ? "checked" : "") />
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    <script>
+        const conn = new signalR.HubConnectionBuilder()
+            .withUrl('/hub/audio').build();
+        conn.start();
+
+        conn.on('ReceiveVolume', (user, vol, character) => {
+            updateFace(user, vol, character);
+
+            if (user == '@(Model.Username)') {
+                updateVolMarker(vol);
+            }
+        });
+
+        function updateVolMarker(vol) {
+            let volMarker = document.getElementById('vol');
+
+            volMarker.value = Math.round(vol * 100) / 100;
+            volMarker.innerHTML = Math.round(vol * 100) / 100;
+        }
+
+        function updateFace(user, vol, character) {
+            let image = '/closed.png';
+
+            if (vol < 0.3) image = '/closed.png';
+            if (vol > 0.3) image = '/slightly_open.png';
+            if (vol > 0.8) image = '/mid_open.png';
+            if (vol > 1) image = '/more_open.png';
+            if (vol > 1.5) image = '/fully_open.png';
+
+            document.querySelector('[name="spotter"][data-spotter-name="'+ user +'"] [name="character"][data-character-name="' + character + '"] img')
+            .src = "/images/" + user + "/" + character + image;
+        }
+
+        async function selectCharacter(character) {
+            let selected = document.querySelector('[name="spotter"][data-spotter-name="@(Model.Username)"]').querySelector('[name="character"][active]').getAttribute('data-character-name');
+            let newSelected = character.getAttribute('data-character-name');
+            
+            if (selected == newSelected) {
+                return; // already selected
+            }
+
+            // all inactive
+            document.querySelector('[name="spotter"][data-spotter-name="@(Model.Username)"]').querySelectorAll('[name="character"]').forEach(character => {
+                character.removeAttribute('active');
+            });
+
+            // active clicked
+            if (character.hasAttribute('active')) {
+                character.removeAttribute('active');
+            } else {
+                character.setAttribute('active', '');
+            }
+
+            await updateSpotterCharacters();
+        }
+
+        async function updateSpotterCharacters(){
+             let characters = [];
+
+            document.querySelector('[name="spotter"][data-spotter-name="@(Model.Username)"]').querySelectorAll('[name="character"]').forEach(character => {
+                characters.push({
+                    Name: character.getAttribute('data-character-name'),
+                    Visible: character.querySelector('input[name="visible"]').checked,
+                    Active:  character.hasAttribute('active')
+                });
+            });
+
+            await fetch('/spotter/update-characters/@(Model.Username)', {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(characters)
+            });
+        }
+        async function hideAll() {
+            document.querySelector('[name="spotter"][data-spotter-name="@(Model.Username)"]').querySelectorAll('[name="character"] input[name="visible"]').forEach(input => {
+                input.checked = false;
+            });
+
+            await updateSpotterCharacters();
+        }
+
+        async function showAll() {
+            document.querySelector('[name="spotter"][data-spotter-name="@(Model.Username)"]').querySelectorAll('[name="character"] input[name="visible"]').forEach(input => {
+                input.checked = true;
+            });
+
+            await updateSpotterCharacters();
+        }
+
+        window.addEventListener('keyup', function (e) {
+            let keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+
+            if (keys.includes(e.key)){
+                let index = keys.indexOf(e.key);
+
+                document.querySelector('[name="spotter"][data-spotter-name="@(Model.Username)"]').querySelectorAll('[name="character"]')[index].querySelector('img').click();
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function(event) {
+            document.getElementById('btn-hide-all').addEventListener('click', async () => {
+                await hideAll();
+            });
+
+            document.getElementById('btn-show-all').addEventListener('click', async () => {
+                await showAll();
+            });
+
+            document.querySelector('[name="spotter"][data-spotter-name="@(Model.Username)"]').querySelectorAll('[name="character"]').forEach(character => {
+                character.querySelector('img').addEventListener('click', async () => {
+                    await selectCharacter(character);
+                });
+            });
+
+            document.querySelector('[name="spotter"][data-spotter-name="@(Model.Username)"]').querySelectorAll('[name="visible"]').forEach(chkVisible => {
+                chkVisible.addEventListener('click', async () => {
+                    await updateSpotterCharacters();
+                });
+            });
+        });
+    </script>
+</body>
+</html>

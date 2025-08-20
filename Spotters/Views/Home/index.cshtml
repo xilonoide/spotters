@@ -1,0 +1,31 @@
+@model Spotters.Models.HomeVM
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Spotters APP</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/css/site.css" />
+</head>
+<body>
+    <h3>This is the XMAS Spotter APP</h3>
+
+    @foreach(var spotter in Model.Spotters)
+    {
+        <ul>
+            <li>
+                <a href="/spotter/@spotter.Name">Spotter - @spotter.Name.ToUpper()</a>
+                <ul>
+                @foreach (var character in spotter.Characters)
+                {
+                    <li>
+                        <a href="/obs/@spotter.Name/@character.Name">OBS @spotter.Name - @character.Name.ToUpper()</a>
+                    </li>
+                }
+                </ul>
+            </li>
+        </ul>
+    }
+</body>
+</html>

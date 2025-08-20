@@ -1,0 +1,80 @@
+[name=spotters] {
+    width: 0 auto;
+    text-align: center;
+    margin-bottom: 1em;
+}
+
+    [name=spotters] .character {
+        display: inline-grid;
+    }
+
+        [name=spotters] .character .visibility {
+            margin-top: 1em;
+        }
+
+    [name=spotters] img {
+        max-height: 200px;
+        border-radius: 15px;
+    }
+
+[name=character][active] img {
+    /*border: 5px solid #555;*/
+    border: 1px solid #777;
+    border-radius: 15px;
+    box-shadow: #555 5px 5px;
+}
+
+[name=buttons] {
+    padding: 0.5em;
+    text-align: center;
+    width: 0px auto;
+}
+
+    [name=buttons] button {
+        padding: 0.5em;
+        font-size: 0.7em;
+    }
+
+.toggle {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+    margin-left: 3.5em;
+}
+
+    .toggle input {
+        display: none;
+    }
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #333;
+    transition: 0.4s;
+    border-radius: 34px;
+}
+
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        left: 4px;
+        bottom: 4px;
+        background-color: #FFF;
+        transition: 0.4s;
+        border-radius: 50%;
+    }
+
+input:checked + .slider {
+    background-color: #060;
+}
+
+    input:checked + .slider:before {
+        transform: translateX(26px);
+    }

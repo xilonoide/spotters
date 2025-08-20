@@ -1,0 +1,10 @@
+{
+  "Port":  1234,
+  "Users": [
+    {
+      "UserName": "DefaultUser",
+      "AudioDeviceProductName": null,
+      "Characters": []
+    }
+  ]
+}
